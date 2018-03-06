@@ -7,25 +7,40 @@ it('calls vatapi.com conrrectly', () => {
             VAT_API_KEY: 'key123'
         }
     }
-    const fakeFetch = (url, opts) => {
-        expect(opts.headers.apikey).toBe('key123')
-        expect(url).toBe('https://vatapi.com/v1/country-code-check?code=DE')
-        return Promise.resolve({
-            json: () => Promise.resolve({
-                rates: {
-                    standard: {
-                        value: 19
-                    }
+    // first attempt at mocking up a fetch request. This is  now done via fakeFetch2, with jest's mock
+    // const fakeFetch = (url, opts) => {
+    //     expect(opts.headers.apikey).toBe('key123')
+    //     expect(url).toBe('https://vatapi.com/v1/country-code-check?code=DE')
+    //     return Promise.resolve({
+    //         json: () => Promise.resolve({
+    //             rates: {
+    //                 standard: {
+    //                     value: 19
+    //                 }
+    //             }
+    //         })
+    //     })
+    // }
+    const fakeFetch2 = jest.fn().mockReturnValue(Promise.resolve({
+        json: () => Promise.resolve({
+            rates: {
+                standard: {
+                    value: 19
                 }
-            })
+            }
         })
-    }
-    return orderTotal(fakeFetch, fakeProcess, {
+    }))
+    return orderTotal(fakeFetch2, fakeProcess, {
         country: 'DE',
         items: [
             { 'name': 'Dragon waffles', price: 20, quantity: 2 }
         ]
-    }).then(result => expect(result).toBe(20*2*1.19))
+    }).then(result => {
+        expect(result).toBe(20*2*1.19)
+        expect(fakeFetch2).toBeCalledWith('https://vatapi.com/v1/country-code-check?code=DE', 
+        {  "headers": { "apikey" : "key123"} }
+    )
+    })
 })
 
 it('Quantity', () => 
